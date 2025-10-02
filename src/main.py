@@ -1162,3 +1162,62 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
 else:
     init_database()
+
+
+@app.route("/punch", methods=["POST"])
+@login_required
+def punch():
+    try:
+        if not request.form.get("punch_type"):
+            flash("Type de pointage non spécifié", "error")
+            return redirect(url_for("employee_dashboard"))
+            
+        employee_id = session["employee_id"]
+        punch_type = request.form["punch_type"]
+        current_time = datetime.now().time()
+        today = date.today()
+        
+        # Récupérer ou créer l'entrée du jour
+        entry = TimeEntry.query.filter_by(
+            employee_id=employee_id,
+            date=today
+        ).first()
+        
+        if not entry:
+            entry = TimeEntry(
+                employee_id=employee_id,
+                date=today
+            )
+            db.session.add(entry)
+        
+        # Mettre à jour le champ approprié
+        if punch_type == "morning_in":
+            if not entry.morning_in:
+                entry.morning_in = current_time
+        elif punch_type == "lunch_out":
+            if entry.morning_in and not entry.lunch_out:
+                entry.lunch_out = current_time
+        elif punch_type == "lunch_in":
+            if entry.lunch_out and not entry.lunch_in:
+                entry.lunch_in = current_time
+        elif punch_type == "evening_out":
+            if entry.lunch_in and not entry.evening_out:
+                entry.evening_out = current_time
+        
+        # Recalculer les heures
+        entry.calculate_hours()
+        db.session.commit()
+        
+        # Invalider les caches
+        advanced_cache.invalidate_by_dependency(f"employee_{employee_id}")
+        advanced_cache.invalidate_by_dependency("time_entries")
+        
+        flash("Pointage enregistré avec succès", "success")
+        return redirect(url_for("employee_dashboard"))
+        
+    except Exception as e:
+        logger.error(f"Erreur lors du pointage: {str(e)}")
+        db.session.rollback()
+        flash("Erreur lors de l'enregistrement du pointage", "error")
+        return redirect(url_for("employee_dashboard"))
+
