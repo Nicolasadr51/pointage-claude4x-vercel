@@ -211,12 +211,40 @@ def admin_required(f):
 @app.route('/')
 def index():
     """Page d'accueil"""
-    return send_from_directory(app.static_folder, 'index.html')
+    try:
+        static_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'index.html')
+        if os.path.exists(static_path):
+            with open(static_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        else:
+            return '''<!DOCTYPE html>
+<html><head><title>Application de Pointage</title></head>
+<body><h1>Application de Pointage</h1>
+<p>Chargement en cours...</p>
+<script>window.location.href = '/static/index.html';</script>
+</body></html>'''
+    except Exception as e:
+        logger.error(f"Erreur lors du chargement de index.html: {str(e)}")
+        return f"Erreur: {str(e)}", 500
 
 @app.route('/admin')
 def admin():
     """Interface d'administration"""
-    return send_from_directory(app.static_folder, 'admin.html')
+    try:
+        static_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'admin.html')
+        if os.path.exists(static_path):
+            with open(static_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        else:
+            return '''<!DOCTYPE html>
+<html><head><title>Administration - Pointage</title></head>
+<body><h1>Interface d'Administration</h1>
+<p>Chargement en cours...</p>
+<script>window.location.href = '/static/admin.html';</script>
+</body></html>'''
+    except Exception as e:
+        logger.error(f"Erreur lors du chargement de admin.html: {str(e)}")
+        return f"Erreur: {str(e)}", 500
 
 # API d'authentification
 @app.route('/api/auth/login', methods=['POST'])
