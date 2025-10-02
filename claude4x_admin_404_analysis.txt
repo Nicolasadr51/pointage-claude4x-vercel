@@ -1,0 +1,235 @@
+Starting Claude 4.X analysis script for Admin 404...
+Successfully read src/main.py
+Calling Claude API for Admin 404 analysis...
+/home/ubuntu/pointage-claude4x/analyze_admin_404.py:18: DeprecationWarning: The model 'claude-3-5-sonnet-20241022' is deprecated and will reach end-of-life on October 22, 2025.
+Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resources/model-deprecations for more information.
+  response = client.messages.create(
+Claude API call for Admin 404 analysis finished.
+=== ANALYSE CLAUDE 4.X POUR ERREUR 404 ADMIN ===
+Après analyse du code, je constate que l'erreur 404 est due à l'absence de la définition de la route '/admin' et de sa fonction `admin_dashboard` dans le code. Bien que le lien vers cette route soit présent dans le template du dashboard employé et que le décorateur `@admin_required` soit correctement défini, la route elle-même n'est pas implémentée.
+
+Voici la solution proposée - ajoutez le code suivant après les autres routes :
+
+```python
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    try:
+        # Statistiques globales depuis le service optimisé
+        global_stats = OptimizedStatsService.get_global_stats()
+        
+        # Liste des employés (avec cache)
+        cache_key = "admin_employees_list"
+        employees = advanced_cache.get(cache_key)
+        
+        if not employees:
+            employees = Employee.query.order_by(Employee.last_name).all()
+            advanced_cache.set(cache_key, employees, 300, ['employees'])
+        
+        # Dernières entrées de temps (avec cache)
+        cache_key = "admin_recent_entries"
+        recent_entries = advanced_cache.get(cache_key)
+        
+        if not recent_entries:
+            recent_entries = TimeEntry.query\
+                .join(Employee)\
+                .order_by(TimeEntry.date.desc())\
+                .limit(10)\
+                .all()
+            advanced_cache.set(cache_key, recent_entries, 300, ['time_entries'])
+        
+        SecurityAudit.log_admin_action(
+            session['employee_id'],
+            "VIEW",
+            "admin_dashboard",
+            request.remote_addr
+        )
+        
+        return render_template_string(ADMIN_DASHBOARD_TEMPLATE,
+                                    global_stats=global_stats,
+                                    employees=employees,
+                                    recent_entries=recent_entries)
+                                    
+    except Exception as e:
+        logger.error(f"Erreur dashboard admin: {str(e)}")
+        flash("Erreur lors du chargement du tableau de bord administrateur", "error")
+        return redirect(url_for('employee_dashboard'))
+```
+
+Et ajoutez également le template correspondant :
+
+```python
+ADMIN_DASHBOARD_TEMPLATE = '''<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Système de Pointage</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); min-height: 100vh; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .stats-card { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-shield-alt"></i> Administration</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/employee"><i class="fas fa-user"></i> Mon Dashboard</a>
+                <a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Statistiques globales -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h3><i class="fas fa-users"></i></h3>
+                        <h4>{{ global_stats.total_employees }}</h4>
+                        <p class="mb-0">Employés actifs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h3><i class="fas fa-clock"></i></h3>
+                        <h4>{{ global_stats.present_today }}</h4>
+                        <p class="mb-0">Présents aujourd'hui</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h3><i class="fas fa-calendar-alt"></i></h3>
+                        <h4>{{ "%.1f"|format(global_stats.total_hours_month) }}h</h4>
+                        <p class="mb-0">Heures ce mois</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h3><i class="fas fa-building"></i></h3>
+                        <h4>{{ global_stats.departments|length }}</h4>
+                        <p class="mb-0">Départements</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liste des employés -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-users"></i> Employés</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Numéro</th>
+                                <th>Nom</th>
+                                <th>Département</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employee in employees %}
+                            <tr>
+                                <td>{{ employee.employee_number }}</td>
+                                <td>{{ employee.first_name }} {{ employee.last_name }}</td>
+                                <td>{{ employee.department }}</td>
+                                <td>
+                                    {% if employee.is_active %}
+                                    <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactif</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/admin/employee/{{ employee.id }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Derniers pointages -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-history"></i> Derniers pointages</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Employé</th>
+                                <th>Heures</th>
+                                <th>Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in recent_entries %}
+                            <tr>
+                                <td>{{ entry.date.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ entry.employee.first_name }} {{ entry.employee.last_name }}</td>
+                                <td>{{ "%.2f"|format(entry.total_hours) }}h</td>
+                                <td>
+                                    <a href="/admin/entry/{{ entry.id }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>'''
+```
+
+Cette solution :
+
+1. Implémente la route `/admin` manquante avec le décorateur `@admin_required`
+2. Utilise le service de statistiques optimisé
+3. Implémente un système de cache pour les données fréquemment accédées
+4. Inclut la journalisation des actions administrateur
+5. Fournit un template complet pour le dashboard administrateur
+6. Gère correctement les erreurs et les redirections
+
+Après avoir ajouté ce code, l'erreur 404 devrait être résolue et les administrateurs devraient pouvoir accéder au tableau de bord d'administration.
