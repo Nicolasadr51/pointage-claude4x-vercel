@@ -399,15 +399,13 @@ def admin_required(f):
     return decorated_function
 
 # Middleware de sécurité
-@app.before_request
-def security_headers():
-    @app.after_request
-    def set_security_headers(response):
-        response.headers['X-Frame-Options'] = 'DENY'
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['X-XSS-Protection'] = '1; mode=block'
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com; font-src 'self' cdnjs.cloudflare.com; connect-src 'self';"
-        return response
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com; font-src 'self' cdnjs.cloudflare.com; connect-src 'self';"
+    return response
 
 # Fonctions utilitaires optimisées
 def get_week_dates(target_date=None):
