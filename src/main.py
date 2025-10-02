@@ -538,7 +538,7 @@ def set_security_headers_and_perf(response):
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://plausible.io 'unsafe-inline' 'unsafe-eval'; style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-inline'; img-src 'self' data: https://* blob:; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https://api.manus.im https://api2.amplitude.com https://sr-client-cfg.amplitude.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://plausible.io 'unsafe-inline' 'unsafe-eval'; style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-inline'; img-src 'self' data: https://* blob:; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https://api.manus.im https://api2.amplitude.com https://sr-client-cfg.amplitude.com https://plausible.io; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
     if app.config.get('PERFORMANCE_MONITORING') and hasattr(request, 'start_time'):
         duration = time_module.time() - request.start_time
         if duration > 1.0:  # Log des requêtes lentes
