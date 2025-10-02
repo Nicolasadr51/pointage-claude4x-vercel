@@ -11,6 +11,7 @@ import io
 import re
 import html
 import json
+import random
 import time as time_module
 import unittest
 from datetime import datetime, date, time, timedelta
@@ -1230,41 +1231,67 @@ def admin_dashboard():
     
     try:
         current_user = Employee.query.get(session["employee_id"])
-        
-        # Statistiques globales optimisées
-        global_stats = OptimizedStatsService.get_global_stats()
-        
-        # Employés actifs
-        employees = Employee.query.filter_by(is_active=True).all()
-        
-        # Derniers pointages (paginés)
-        page = request.args.get("page", 1, type=int)
-        recent_entries = TimeEntry.query.order_by(TimeEntry.created_at.desc()).paginate(
-            page=page, per_page=10, error_out=False
-        )
-        
-        # Données pour les graphiques (exemple)
-        dept_chart_labels = [dept for dept, _ in global_stats["departments"]]
-        dept_chart_data = [count for _, count in global_stats["departments"]]
-        
-        # Exemple de données hebdomadaires (à adapter avec des données réelles)
-        weekly_chart_labels = [(date.today() - timedelta(days=i)).strftime("%d/%m") for i in range(7)]
-        weekly_chart_data = [random.randint(50, 150) for _ in range(7)] # Données fictives
-        
+        if not current_user:
+            raise ValueError("Utilisateur non trouvé")
+        # Statistiques globales avec gestion d'erreur
+        try:
+            global_stats = OptimizedStatsService.get_global_stats()
+        except Exception as e:
+            logger.error(f"Erreur lors du calcul des stats globales: {str(e)}")
+            global_stats = {
+                'total_employees': 0,
+                'present_today': 0,
+                'total_hours_month': 0,
+                'departments': []
+            }
+        # Employés actifs avec pagination
+        try:
+            employees = Employee.query.filter_by(is_active=True).order_by(Employee.last_name).all()
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des employés: {str(e)}")
+            employees = []
+        # Derniers pointages avec gestion d'erreur
+        try:
+            page = request.args.get("page", 1, type=int)
+            recent_entries = TimeEntry.query\
+                .join(Employee)\
+                .order_by(TimeEntry.date.desc())\
+                .paginate(page=page, per_page=10, error_out=False)
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des pointages: {str(e)}")
+            recent_entries = []
+        # Données des graphiques avec validation
+        dept_chart_labels = []
+        dept_chart_data = []
+        if global_stats.get("departments"):
+            dept_chart_labels = [dept[0] or "Sans département" for dept in global_stats["departments"]]
+            dept_chart_data = [dept[1] for dept in global_stats["departments"]]
+        # Données hebdomadaires sécurisées
+        weekly_chart_labels = [(date.today() - timedelta(days=i)).strftime("%d/%m") for i in range(6, -1, -1)]
+        weekly_chart_data = []
+        for i in range(7):
+            try:
+                date_check = date.today() - timedelta(days=6-i)
+                hours = db.session.query(db.func.sum(TimeEntry.total_hours))\
+                    .filter(TimeEntry.date == date_check)\
+                    .scalar() or 0
+                weekly_chart_data.append(float(hours))
+            except Exception:
+                weekly_chart_data.append(0)
         SecurityAudit.log_data_access(current_user.id, "admin_dashboard", request.remote_addr)
         
         perf_monitor.end_timer("admin_dashboard")
         
         return render_template_string(ADMIN_DASHBOARD_TEMPLATE,
-                                    current_user=current_user,
-                                    global_stats=global_stats,
-                                    employees=employees,
-                                    recent_entries=recent_entries.items,
-                                    pagination=recent_entries,
-                                    dept_chart_labels=json.dumps(dept_chart_labels),
-                                    dept_chart_data=json.dumps(dept_chart_data),
-                                    weekly_chart_labels=json.dumps(weekly_chart_labels),
-                                    weekly_chart_data=json.dumps(weekly_chart_data))
+            current_user=current_user,
+            global_stats=global_stats,
+            employees=employees,
+            recent_entries=recent_entries.items if hasattr(recent_entries, 'items') else [],
+            pagination=recent_entries if hasattr(recent_entries, 'iter_pages') else None,
+            dept_chart_labels=json.dumps(dept_chart_labels),
+            dept_chart_data=json.dumps(dept_chart_data),
+            weekly_chart_labels=json.dumps(weekly_chart_labels),
+            weekly_chart_data=json.dumps(weekly_chart_data))
                                     
     except Exception as e:
         logger.error(f"Erreur dashboard admin: {str(e)}")

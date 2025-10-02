@@ -1,0 +1,117 @@
+Starting Claude 4.X analysis script for Admin Dashboard error...
+Successfully read src/main.py
+Calling Claude API for Admin Dashboard error analysis...
+/home/ubuntu/pointage-claude4x/analyze_admin_dashboard_error.py:18: DeprecationWarning: The model 'claude-3-5-sonnet-20241022' is deprecated and will reach end-of-life on October 22, 2025.
+Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resources/model-deprecations for more information.
+  response = client.messages.create(
+Claude API call for Admin Dashboard error analysis finished.
+=== ANALYSE CLAUDE 4.X POUR ERREUR TABLEAU DE BORD ADMIN ===
+Après analyse du code, j'ai identifié plusieurs problèmes potentiels pouvant causer l'erreur "Erreur lors du chargement du tableau de bord administrateur" :
+
+1. La fonction `random` n'est pas importée bien qu'utilisée pour `weekly_chart_data`
+2. Les données des graphiques nécessitent un formatage spécifique
+3. Certaines variables requises par le template ne sont pas correctement initialisées
+
+Voici la correction proposée pour la fonction `admin_dashboard` :
+
+```python
+import random  # Ajouter l'import en haut du fichier
+
+@app.route("/admin")
+@admin_required
+def admin_dashboard():
+    perf_monitor.start_timer("admin_dashboard")
+    
+    try:
+        current_user = Employee.query.get(session["employee_id"])
+        if not current_user:
+            raise ValueError("Utilisateur non trouvé")
+
+        # Statistiques globales avec gestion d'erreur
+        try:
+            global_stats = OptimizedStatsService.get_global_stats()
+        except Exception as e:
+            logger.error(f"Erreur lors du calcul des stats globales: {str(e)}")
+            global_stats = {
+                'total_employees': 0,
+                'present_today': 0,
+                'total_hours_month': 0,
+                'departments': []
+            }
+
+        # Employés actifs avec pagination
+        try:
+            employees = Employee.query.filter_by(is_active=True).order_by(Employee.last_name).all()
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des employés: {str(e)}")
+            employees = []
+
+        # Derniers pointages avec gestion d'erreur
+        try:
+            page = request.args.get("page", 1, type=int)
+            recent_entries = TimeEntry.query\
+                .join(Employee)\
+                .order_by(TimeEntry.date.desc())\
+                .paginate(page=page, per_page=10, error_out=False)
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des pointages: {str(e)}")
+            recent_entries = []
+
+        # Données des graphiques avec validation
+        dept_chart_labels = []
+        dept_chart_data = []
+        if global_stats.get("departments"):
+            dept_chart_labels = [dept[0] or "Sans département" for dept in global_stats["departments"]]
+            dept_chart_data = [dept[1] for dept in global_stats["departments"]]
+
+        # Données hebdomadaires sécurisées
+        weekly_chart_labels = [(date.today() - timedelta(days=i)).strftime("%d/%m") for i in range(6, -1, -1)]
+        weekly_chart_data = []
+        for i in range(7):
+            try:
+                date_check = date.today() - timedelta(days=6-i)
+                hours = db.session.query(db.func.sum(TimeEntry.total_hours))\
+                    .filter(TimeEntry.date == date_check)\
+                    .scalar() or 0
+                weekly_chart_data.append(float(hours))
+            except Exception:
+                weekly_chart_data.append(0)
+
+        SecurityAudit.log_data_access(current_user.id, "admin_dashboard", request.remote_addr)
+        
+        perf_monitor.end_timer("admin_dashboard")
+        
+        return render_template_string(ADMIN_DASHBOARD_TEMPLATE,
+            current_user=current_user,
+            global_stats=global_stats,
+            employees=employees,
+            recent_entries=recent_entries.items if hasattr(recent_entries, 'items') else [],
+            pagination=recent_entries if hasattr(recent_entries, 'iter_pages') else None,
+            dept_chart_labels=json.dumps(dept_chart_labels),
+            dept_chart_data=json.dumps(dept_chart_data),
+            weekly_chart_labels=json.dumps(weekly_chart_labels),
+            weekly_chart_data=json.dumps(weekly_chart_data))
+                                    
+    except Exception as e:
+        logger.error(f"Erreur dashboard admin: {str(e)}")
+        flash("Erreur lors du chargement du tableau de bord administrateur", "error")
+        return redirect(url_for("index"))
+```
+
+Les principales améliorations apportées :
+
+1. Ajout de l'import `random` manquant
+2. Gestion d'erreur plus fine pour chaque section de données
+3. Validation des données avant le passage au template
+4. Formatage correct des données pour les graphiques avec `json.dumps()`
+5. Vérification de l'existence des attributs avant de les utiliser
+6. Calcul réel des données hebdomadaires au lieu de données aléatoires
+7. Meilleure structuration du code avec des blocs try/except séparés
+
+Ces modifications devraient résoudre l'erreur en :
+- Évitant les erreurs de données manquantes ou mal formatées
+- Assurant que toutes les variables requises par le template sont disponibles
+- Gérant correctement les cas d'erreur à chaque étape
+- Fournissant des valeurs par défaut sécurisées en cas de problème
+
+Le template devrait maintenant recevoir toutes les données nécessaires dans le format attendu, évitant ainsi les erreurs de rendu.
