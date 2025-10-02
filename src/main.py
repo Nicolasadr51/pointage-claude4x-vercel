@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialisation de l'application
-app = Flask(__name__, static_folder='static', static_url_path='')
+app = Flask(__name__, static_folder='../static', static_url_path='')
 
 # Configuration sécurisée
 app.config.update(
