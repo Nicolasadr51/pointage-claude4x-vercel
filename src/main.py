@@ -1283,28 +1283,28 @@ EMPLOYEE_DASHBOARD_TEMPLATE = '''<!DOCTYPE html>
                         
                         <div class="d-flex justify-content-center flex-wrap">
                             <form method="POST" action="/punch" class="d-inline me-2 mb-2">
-                                {{ csrf_token() }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <input type="hidden" name="punch_type" value="morning_in">
                                 <button type="submit" class="btn btn-success">
                                     <i class="fas fa-sun"></i> Arrivée Matin
                                 </button>
                             </form>
                             <form method="POST" action="/punch" class="d-inline me-2 mb-2">
-                                {{ csrf_token() }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <input type="hidden" name="punch_type" value="lunch_out">
                                 <button type="submit" class="btn btn-warning">
                                     <i class="fas fa-utensils"></i> Sortie Midi
                                 </button>
                             </form>
                             <form method="POST" action="/punch" class="d-inline me-2 mb-2">
-                                {{ csrf_token() }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <input type="hidden" name="punch_type" value="lunch_in">
                                 <button type="submit" class="btn btn-info">
                                     <i class="fas fa-coffee"></i> Retour Midi
                                 </button>
                             </form>
                             <form method="POST" action="/punch" class="d-inline me-2 mb-2">
-                                {{ csrf_token() }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <input type="hidden" name="punch_type" value="evening_out">
                                 <button type="submit" class="btn btn-danger">
                                     <i class="fas fa-moon"></i> Sortie Soir
@@ -1901,7 +1901,7 @@ ADMIN_DASHBOARD_TEMPLATE = '''<!DOCTYPE html>
                             </div>
                             <div class="card-body">
                                 <form method="POST" action="/admin/export_custom">
-                                    {{ csrf_token() }}
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <div class="mb-3">
                                         <label class="form-label">Employé</label>
                                         <select name="employee_id" class="form-select">
@@ -1974,7 +1974,7 @@ ADMIN_DASHBOARD_TEMPLATE = '''<!DOCTYPE html>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST" action="/admin/add_employee">
-                    {{ csrf_token() }}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6">
