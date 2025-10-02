@@ -64,10 +64,10 @@ app.config.update(
 db = SQLAlchemy(app)
 csrf = CSRFProtect(app)
 limiter = Limiter(
-    app,
     key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"]
 )
+limiter.init_app(app)
 
 # Cache simple en mémoire pour les statistiques
 stats_cache = {}
@@ -669,8 +669,9 @@ def init_database():
                 )
                 employee.set_password('Password123!')
                 db.session.add(employee)
+                db.session.commit()
                 
-                # Créer quelques entrées de test
+                # Créer quelques entrées de test après commit
                 for i in range(5):
                     test_date = date.today() - timedelta(days=i)
                     entry = TimeEntry(

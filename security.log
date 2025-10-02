@@ -1,0 +1,5 @@
+2025-10-02 11:56:02,415 - __main__ - ERROR - Erreur initialisation base de données: (sqlite3.IntegrityError) NOT NULL constraint failed: time_entries.employee_id
+[SQL: INSERT INTO time_entries (employee_id, date, morning_in, lunch_out, lunch_in, evening_out, total_hours, notes, modified_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id]
+[parameters: (None, '2025-10-02', '08:00:00.000000', '12:00:00.000000', '13:00:00.000000', '17:00:00.000000', 8.0, None, None, '2025-10-02 15:56:02.414793', '2025-10-02 15:56:02.414795')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2025-10-02 11:56:02,415 - __main__ - INFO - 🚀 Application de pointage SÉCURISÉE ÉTAPE 2 démarrée
