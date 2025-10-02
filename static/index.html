@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système de Pointage - Accueil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #ecf0f1;
+            --dark-text: #2c3e50;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .card-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .card-header .subtitle {
+            margin-top: 0.5rem;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .security-badge {
+            display: inline-block;
+            background: var(--success-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .btn {
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            border: none;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            border: none;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            border: none;
+        }
+
+        .punch-btn {
+            margin: 0.5rem;
+            min-width: 150px;
+        }
+
+        .clock {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-align: center;
+            margin: 2rem 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .features {
+            margin-top: 2rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 10px;
+        }
+
+        .feature-icon {
+            color: var(--secondary-color);
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            width: 30px;
+            text-align: center;
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .card-header h1 {
+                font-size: 2rem;
+            }
+            
+            .clock {
+                font-size: 2rem;
+            }
+            
+            .punch-btn {
+                min-width: 120px;
+                margin: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-8 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h1><i class="fas fa-clock"></i> Système de Pointage</h1>
+                            <p class="subtitle">Gestion moderne du temps de travail</p>
+                            <div class="security-badge">
+                                <i class="fas fa-shield-alt"></i> Sécurisé Claude 4.X
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <!-- Formulaire de connexion -->
+                            <div id="loginForm">
+                                <form onsubmit="handleLogin(event)">
+                                    <div class="mb-3">
+                                        <label for="employee_number" class="form-label">
+                                            <i class="fas fa-user"></i> Numéro d'employé
+                                        </label>
+                                        <input type="text" class="form-control" id="employee_number" 
+                                               name="employee_number" required autocomplete="username"
+                                               placeholder="Ex: ADMIN001, EMP001, Munier...">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">
+                                            <i class="fas fa-lock"></i> Mot de passe
+                                        </label>
+                                        <input type="password" class="form-control" id="password" 
+                                               name="password" required autocomplete="current-password">
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-sign-in-alt"></i> Se connecter
+                                        </button>
+                                    </div>
+                                </form>
+                                
+                                <div class="features">
+                                    <h5><i class="fas fa-info-circle"></i> Fonctionnalités</h5>
+                                    <div class="feature-item">
+                                        <i class="fas fa-shield-alt feature-icon"></i>
+                                        <span>Protection XSS avec DOMPurify</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="fas fa-check-circle feature-icon"></i>
+                                        <span>Validation et sanitisation des données</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="fas fa-lock feature-icon"></i>
+                                        <span>Sessions sécurisées</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="fas fa-chart-bar feature-icon"></i>
+                                        <span>Interface d'administration complète</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 text-center">
+                                    <small class="text-muted">
+                                        <strong>Comptes de test:</strong><br>
+                                        Admin: ADMIN001 / admin123<br>
+                                        Employé: EMP001 / password123
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Système de pointage -->
+                            <div id="punchSystem" style="display: none;">
+                                <div class="text-center mb-4">
+                                    <div class="clock" id="currentTime"></div>
+                                    <h4 id="welcomeMessage"></h4>
+                                </div>
+                                
+                                <div class="d-flex justify-content-center flex-wrap">
+                                    <button class="btn btn-success punch-btn" onclick="punch('morning_in')">
+                                        <i class="fas fa-sun"></i> Arrivée Matin
+                                    </button>
+                                    <button class="btn btn-warning punch-btn" onclick="punch('lunch_out')">
+                                        <i class="fas fa-utensils"></i> Sortie Midi
+                                    </button>
+                                    <button class="btn btn-info punch-btn" onclick="punch('lunch_in')">
+                                        <i class="fas fa-coffee"></i> Retour Midi
+                                    </button>
+                                    <button class="btn btn-danger punch-btn" onclick="punch('evening_out')">
+                                        <i class="fas fa-moon"></i> Sortie Soir
+                                    </button>
+                                </div>
+                                
+                                <div class="mt-4 text-center">
+                                    <button class="btn btn-outline-secondary" onclick="logout()">
+                                        <i class="fas fa-sign-out-alt"></i> Déconnexion
+                                    </button>
+                                    <button id="adminBtn" class="btn btn-outline-primary ms-2" onclick="goToAdmin()" style="display: none;">
+                                        <i class="fas fa-cog"></i> Administration
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Messages d'alerte -->
+                            <div id="alertContainer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables globales
+        let currentUser = null;
+
+        // Fonctions de sécurité
+        function sanitizeInput(input) {
+            return DOMPurify.sanitize(input.toString().trim());
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertHtml = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show mt-3" role="alert">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${sanitizeInput(message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            alertContainer.innerHTML = alertHtml;
+            
+            // Auto-hide après 5 secondes
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Gestion de l'horloge
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const clockElement = document.getElementById('currentTime');
+            if (clockElement) {
+                clockElement.textContent = timeString;
+            }
+        }
+
+        // Démarrer l'horloge
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Gestion de la connexion
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Désactiver le bouton et afficher le loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
+            
+            const data = {
+                employee_number: sanitizeInput(form.employee_number.value),
+                password: form.password.value
+            };
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentUser = result.employee;
+                    showAlert('Connexion réussie !', 'success');
+                    
+                    // Afficher le système de pointage
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('punchSystem').style.display = 'block';
+                    
+                    // Message de bienvenue
+                    document.getElementById('welcomeMessage').textContent = 
+                        `Bienvenue, ${currentUser.first_name} ${currentUser.last_name}`;
+                    
+                    // Afficher le bouton admin si nécessaire
+                    if (result.is_admin) {
+                        document.getElementById('adminBtn').style.display = 'inline-block';
+                    }
+                } else {
+                    showAlert(result.error || 'Erreur de connexion', 'danger');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert('Erreur de connexion au serveur', 'danger');
+            } finally {
+                // Réactiver le bouton
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // Gestion des pointages
+        async function punch(type) {
+            const typeLabels = {
+                'morning_in': 'Arrivée matin',
+                'lunch_out': 'Sortie midi',
+                'lunch_in': 'Retour midi',
+                'evening_out': 'Sortie soir'
+            };
+
+            try {
+                const now = new Date();
+                const response = await fetch('/api/timeentries', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        [type]: now.toISOString()
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert(`${typeLabels[type]} enregistrée à ${now.toLocaleTimeString('fr-FR')}`, 'success');
+                } else {
+                    showAlert(result.error || 'Erreur lors du pointage', 'danger');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert('Erreur de connexion au serveur', 'danger');
+            }
+        }
+
+        // Déconnexion
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    currentUser = null;
+                    document.getElementById('loginForm').style.display = 'block';
+                    document.getElementById('punchSystem').style.display = 'none';
+                    document.getElementById('adminBtn').style.display = 'none';
+                    
+                    // Réinitialiser le formulaire
+                    document.querySelector('#loginForm form').reset();
+                    
+                    showAlert('Déconnexion réussie', 'success');
+                } else {
+                    showAlert('Erreur lors de la déconnexion', 'danger');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert('Erreur de connexion au serveur', 'danger');
+            }
+        }
+
+        // Aller à l'administration
+        function goToAdmin() {
+            window.location.href = '/admin';
+        }
+
+        // Vérification de la session au chargement
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/check');
+                const data = await response.json();
+
+                if (data.authenticated) {
+                    currentUser = data.employee;
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('punchSystem').style.display = 'block';
+                    
+                    document.getElementById('welcomeMessage').textContent = 
+                        `Bienvenue, ${currentUser.first_name} ${currentUser.last_name}`;
+                    
+                    if (data.is_admin) {
+                        document.getElementById('adminBtn').style.display = 'inline-block';
+                    }
+                } else {
+                    document.getElementById('loginForm').style.display = 'block';
+                    document.getElementById('punchSystem').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Erreur lors de la vérification de l\'authentification:', error);
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('punchSystem').style.display = 'none';
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            
+            // Gestion des erreurs globales
+            window.addEventListener('error', function(e) {
+                console.error('Erreur JavaScript:', e.error);
+            });
+            
+            // Protection XSS basique
+            if (window.location.hash.includes('<script')) {
+                window.location.hash = '';
+            }
+        });
+    </script>
+</body>
+</html>

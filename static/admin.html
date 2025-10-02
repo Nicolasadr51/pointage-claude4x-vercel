@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Système de Pointage</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- DataTables -->
+    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- DOMPurify -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #ecf0f1;
+            --dark-text: #2c3e50;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h4 {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu li {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-menu a {
+            display: block;
+            padding: 1rem 1.5rem;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+            transition: transform 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stats-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .stats-icon.primary { background: var(--primary-color); }
+        .stats-icon.success { background: var(--success-color); }
+        .stats-icon.warning { background: var(--warning-color); }
+        .stats-icon.danger { background: var(--danger-color); }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+
+        .btn {
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fas fa-clock"></i> Pointage Admin</h4>
+            <small>Interface d'administration</small>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="#dashboard" class="nav-link active" data-section="dashboard">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a></li>
+            <li><a href="#timeentries" class="nav-link" data-section="timeentries">
+                <i class="fas fa-clock"></i> Gestion des Pointages
+            </a></li>
+            <li><a href="#employees" class="nav-link" data-section="employees">
+                <i class="fas fa-users"></i> Employés
+            </a></li>
+            <li><a href="#reports" class="nav-link" data-section="reports">
+                <i class="fas fa-chart-bar"></i> Rapports
+            </a></li>
+            <li><a href="#" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Déconnexion
+            </a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="content-section active">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                <button class="btn btn-outline-primary" onclick="refreshDashboard()">
+                    <i class="fas fa-sync-alt"></i> Actualiser
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="d-flex align-items-center">
+                            <div class="stats-icon primary">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h3 id="totalEmployees" class="mb-0">-</h3>
+                                <small class="text-muted">Employés Actifs</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="d-flex align-items-center">
+                            <div class="stats-icon success">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h3 id="todayEntries" class="mb-0">-</h3>
+                                <small class="text-muted">Pointages Aujourd'hui</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="d-flex align-items-center">
+                            <div class="stats-icon warning">
+                                <i class="fas fa-hourglass-half"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h3 id="weekHours" class="mb-0">-</h3>
+                                <small class="text-muted">Heures Cette Semaine</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="d-flex align-items-center">
+                            <div class="stats-icon danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h3 id="pendingEntries" class="mb-0">-</h3>
+                                <small class="text-muted">Pointages Incomplets</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-chart-line"></i> Heures Travaillées (7 derniers jours)</h5>
+                        <canvas id="hoursChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-chart-pie"></i> Répartition des Pointages</h5>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Entries Section -->
+        <div id="timeentries" class="content-section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-clock"></i> Gestion des Pointages</h2>
+                <div>
+                    <button class="btn btn-success" onclick="showCreateModal()">
+                        <i class="fas fa-plus"></i> Nouveau Pointage
+                    </button>
+                    <button class="btn btn-info" onclick="exportData()">
+                        <i class="fas fa-download"></i> Exporter
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="table-container">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Employé</label>
+                        <select id="filterEmployee" class="form-select">
+                            <option value="">Tous les employés</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Date de début</label>
+                        <input type="date" id="filterStartDate" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Date de fin</label>
+                        <input type="date" id="filterEndDate" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button class="btn btn-primary" onclick="applyFilters()">
+                                <i class="fas fa-search"></i> Filtrer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bulk Actions -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <button class="btn btn-danger" onclick="bulkDelete()" disabled id="bulkDeleteBtn">
+                            <i class="fas fa-trash"></i> Supprimer la sélection
+                        </button>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span id="selectedCount" class="text-muted">0 élément(s) sélectionné(s)</span>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table id="timeentriesTable" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th><input type="checkbox" id="selectAll"></th>
+                                <th>ID</th>
+                                <th>Employé</th>
+                                <th>Date</th>
+                                <th>Arrivée Matin</th>
+                                <th>Sortie Midi</th>
+                                <th>Retour Midi</th>
+                                <th>Sortie Soir</th>
+                                <th>Total Heures</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <span id="paginationInfo" class="text-muted"></span>
+                    </div>
+                    <nav>
+                        <ul class="pagination" id="pagination"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employees Section -->
+        <div id="employees" class="content-section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users"></i> Gestion des Employés</h2>
+                <button class="btn btn-success">
+                    <i class="fas fa-plus"></i> Nouvel Employé
+                </button>
+            </div>
+            <div class="table-container">
+                <p class="text-muted">Section en développement...</p>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reports" class="content-section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-bar"></i> Rapports</h2>
+            </div>
+            <div class="table-container">
+                <p class="text-muted">Section en développement...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Create/Edit Time Entry -->
+    <div class="modal fade" id="timeentryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="fas fa-clock"></i> Nouveau Pointage
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="timeentryForm">
+                        <input type="hidden" id="timeentryId">
+                        
+                        <div class="mb-3">
+                            <label for="modalEmployee" class="form-label">Employé *</label>
+                            <select id="modalEmployee" class="form-select" required>
+                                <option value="">Sélectionner un employé</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="modalDate" class="form-label">Date *</label>
+                            <input type="date" id="modalDate" class="form-control" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="modalMorningIn" class="form-label">Arrivée Matin</label>
+                                <input type="time" id="modalMorningIn" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="modalLunchOut" class="form-label">Sortie Midi</label>
+                                <input type="time" id="modalLunchOut" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="modalLunchIn" class="form-label">Retour Midi</label>
+                                <input type="time" id="modalLunchIn" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="modalEveningOut" class="form-label">Sortie Soir</label>
+                                <input type="time" id="modalEveningOut" class="form-control">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="saveTimeentry()">
+                        <i class="fas fa-save"></i> Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+            </div>
+            <p class="mt-2">Chargement en cours...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        // Variables globales
+        let currentUser = null;
+        let timeentriesData = [];
+        let employeesData = [];
+        let currentPage = 1;
+        let totalPages = 1;
+        let selectedItems = new Set();
+
+        // Fonctions de sécurité
+        function sanitize(input) {
+            return DOMPurify.sanitize(input.toString());
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${sanitize(message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', alertHtml);
+            
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                if (alerts.length > 0) {
+                    alerts[alerts.length - 1].remove();
+                }
+            }, 5000);
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // Navigation
+        function showSection(sectionId) {
+            // Masquer toutes les sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Afficher la section demandée
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Mettre à jour la navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[data-section="${sectionId}"]`).classList.add('active');
+            
+            // Charger les données selon la section
+            switch(sectionId) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'timeentries':
+                    loadTimeentries();
+                    break;
+                case 'employees':
+                    loadEmployees();
+                    break;
+            }
+        }
+
+        // Dashboard
+        async function loadDashboard() {
+            try {
+                showLoading();
+                
+                // Charger les statistiques
+                const [employeesRes, timeentriesRes] = await Promise.all([
+                    fetch('/api/employees'),
+                    fetch('/api/admin/timeentries?limit=100')
+                ]);
+                
+                if (!employeesRes.ok || !timeentriesRes.ok) {
+                    throw new Error('Erreur lors du chargement des données');
+                }
+                
+                const employeesData = await employeesRes.json();
+                const timeentriesData = await timeentriesRes.json();
+                
+                // Mettre à jour les statistiques
+                document.getElementById('totalEmployees').textContent = employeesData.employees.length;
+                
+                const today = new Date().toISOString().split('T')[0];
+                const todayEntries = timeentriesData.timeentries.filter(entry => entry.date === today);
+                document.getElementById('todayEntries').textContent = todayEntries.length;
+                
+                // Calculer les heures de la semaine
+                const weekStart = new Date();
+                weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+                const weekStartStr = weekStart.toISOString().split('T')[0];
+                
+                const weekEntries = timeentriesData.timeentries.filter(entry => entry.date >= weekStartStr);
+                const weekHours = weekEntries.reduce((sum, entry) => sum + (entry.total_hours || 0), 0);
+                document.getElementById('weekHours').textContent = Math.round(weekHours);
+                
+                // Pointages incomplets
+                const incompleteEntries = timeentriesData.timeentries.filter(entry => 
+                    !entry.morning_in || !entry.evening_out
+                );
+                document.getElementById('pendingEntries').textContent = incompleteEntries.length;
+                
+                // Charger les graphiques
+                loadCharts(timeentriesData.timeentries);
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert('Erreur lors du chargement du dashboard', 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function loadCharts(timeentries) {
+            // Graphique des heures (7 derniers jours)
+            const last7Days = [];
+            const hoursData = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                last7Days.push(date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' }));
+                
+                const dayEntries = timeentries.filter(entry => entry.date === dateStr);
+                const dayHours = dayEntries.reduce((sum, entry) => sum + (entry.total_hours || 0), 0);
+                hoursData.push(dayHours);
+            }
+            
+            const hoursCtx = document.getElementById('hoursChart').getContext('2d');
+            new Chart(hoursCtx, {
+                type: 'line',
+                data: {
+                    labels: last7Days,
+                    datasets: [{
+                        label: 'Heures Travaillées',
+                        data: hoursData,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // Graphique en secteurs des statuts
+            const completeEntries = timeentries.filter(entry => 
+                entry.morning_in && entry.evening_out
+            ).length;
+            const incompleteEntries = timeentries.length - completeEntries;
+            
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Complets', 'Incomplets'],
+                    datasets: [{
+                        data: [completeEntries, incompleteEntries],
+                        backgroundColor: ['#27ae60', '#e74c3c']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gestion des pointages
+        async function loadTimeentries() {
+            try {
+                showLoading();
+                
+                // Charger les employés pour les filtres
+                const employeesRes = await fetch('/api/employees');
+                if (employeesRes.ok) {
+                    const employeesData = await employeesRes.json();
+                    populateEmployeeSelects(employeesData.employees);
+                }
+                
+                // Charger les pointages
+                await loadTimeentriesPage();
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert('Erreur lors du chargement des pointages', 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function loadTimeentriesPage() {
+            try {
+                const params = new URLSearchParams({
+                    limit: 20,
+                    offset: (currentPage - 1) * 20
+                });
+                
+                // Ajouter les filtres
+                const employeeFilter = document.getElementById('filterEmployee').value;
+                const startDateFilter = document.getElementById('filterStartDate').value;
+                const endDateFilter = document.getElementById('filterEndDate').value;
+                
+                if (employeeFilter) params.append('employee_id', employeeFilter);
+                if (startDateFilter) params.append('start_date', startDateFilter);
+                if (endDateFilter) params.append('end_date', endDateFilter);
+                
+                const response = await fetch(`/api/admin/timeentries?${params}`);
+                if (!response.ok) throw new Error('Erreur serveur');
+                
+                const data = await response.json();
+                timeentriesData = data.timeentries;
+                
+                // Mettre à jour le tableau
+                updateTimeentriesTable();
+                
+                // Mettre à jour la pagination
+                totalPages = Math.ceil(data.total_count / 20);
+                updatePagination(data.total_count);
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert('Erreur lors du chargement des pointages', 'danger');
+            }
+        }
+
+        function updateTimeentriesTable() {
+            const tbody = document.querySelector('#timeentriesTable tbody');
+            tbody.innerHTML = '';
+            
+            timeentriesData.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="checkbox" class="item-select" value="${entry.id}"></td>
+                    <td>${sanitize(entry.id)}</td>
+                    <td>${sanitize(entry.employee_name)}</td>
+                    <td>${sanitize(entry.date)}</td>
+                    <td>${sanitize(entry.morning_in || '-')}</td>
+                    <td>${sanitize(entry.lunch_out || '-')}</td>
+                    <td>${sanitize(entry.lunch_in || '-')}</td>
+                    <td>${sanitize(entry.evening_out || '-')}</td>
+                    <td><strong>${sanitize(entry.total_hours || 0)}h</strong></td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1" onclick="editTimeentry(${entry.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteTimeentry(${entry.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Mettre à jour les événements de sélection
+            updateSelectionEvents();
+        }
+
+        function updateSelectionEvents() {
+            // Sélection globale
+            document.getElementById('selectAll').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.item-select');
+                checkboxes.forEach(cb => {
+                    cb.checked = this.checked;
+                    if (this.checked) {
+                        selectedItems.add(cb.value);
+                    } else {
+                        selectedItems.delete(cb.value);
+                    }
+                });
+                updateSelectionUI();
+            });
+            
+            // Sélection individuelle
+            document.querySelectorAll('.item-select').forEach(cb => {
+                cb.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectedItems.add(this.value);
+                    } else {
+                        selectedItems.delete(this.value);
+                    }
+                    updateSelectionUI();
+                });
+            });
+        }
+
+        function updateSelectionUI() {
+            const count = selectedItems.size;
+            document.getElementById('selectedCount').textContent = `${count} élément(s) sélectionné(s)`;
+            document.getElementById('bulkDeleteBtn').disabled = count === 0;
+        }
+
+        function updatePagination(totalCount) {
+            const paginationInfo = document.getElementById('paginationInfo');
+            const start = (currentPage - 1) * 20 + 1;
+            const end = Math.min(currentPage * 20, totalCount);
+            paginationInfo.textContent = `Affichage de ${start} à ${end} sur ${totalCount} entrées`;
+            
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            // Bouton précédent
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Précédent</a>`;
+            pagination.appendChild(prevLi);
+            
+            // Pages
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+                pagination.appendChild(li);
+            }
+            
+            // Bouton suivant
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Suivant</a>`;
+            pagination.appendChild(nextLi);
+        }
+
+        function changePage(page) {
+            if (page >= 1 && page <= totalPages && page !== currentPage) {
+                currentPage = page;
+                loadTimeentriesPage();
+            }
+        }
+
+        function populateEmployeeSelects(employees) {
+            const selects = ['filterEmployee', 'modalEmployee'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                const currentValue = select.value;
+                
+                // Garder la première option
+                const firstOption = select.querySelector('option');
+                select.innerHTML = '';
+                select.appendChild(firstOption);
+                
+                employees.forEach(emp => {
+                    const option = document.createElement('option');
+                    option.value = emp.id;
+                    option.textContent = `${emp.first_name} ${emp.last_name} (${emp.employee_number})`;
+                    select.appendChild(option);
+                });
+                
+                select.value = currentValue;
+            });
+        }
+
+        // Modal de création/édition
+        function showCreateModal() {
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus"></i> Nouveau Pointage';
+            document.getElementById('timeentryForm').reset();
+            document.getElementById('timeentryId').value = '';
+            document.getElementById('modalDate').value = new Date().toISOString().split('T')[0];
+            
+            const modal = new bootstrap.Modal(document.getElementById('timeentryModal'));
+            modal.show();
+        }
+
+        async function editTimeentry(id) {
+            try {
+                const entry = timeentriesData.find(e => e.id === id);
+                if (!entry) return;
+                
+                document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Modifier Pointage';
+                document.getElementById('timeentryId').value = entry.id;
+                document.getElementById('modalEmployee').value = entry.employee_id;
+                document.getElementById('modalDate').value = entry.date;
+                document.getElementById('modalMorningIn').value = entry.morning_in || '';
+                document.getElementById('modalLunchOut').value = entry.lunch_out || '';
+                document.getElementById('modalLunchIn').value = entry.lunch_in || '';
+                document.getElementById('modalEveningOut').value = entry.evening_out || '';
+                
+                const modal = new bootstrap.Modal(document.getElementById('timeentryModal'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert('Erreur lors du chargement du pointage', 'danger');
+            }
+        }
+
+        async function saveTimeentry() {
+            try {
+                const form = document.getElementById('timeentryForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                
+                showLoading();
+                
+                const id = document.getElementById('timeentryId').value;
+                const data = {
+                    employee_id: parseInt(document.getElementById('modalEmployee').value),
+                    date: document.getElementById('modalDate').value,
+                    morning_in: document.getElementById('modalMorningIn').value || null,
+                    lunch_out: document.getElementById('modalLunchOut').value || null,
+                    lunch_in: document.getElementById('modalLunchIn').value || null,
+                    evening_out: document.getElementById('modalEveningOut').value || null
+                };
+                
+                const url = id ? `/api/admin/timeentries/${id}` : '/api/admin/timeentries';
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erreur serveur');
+                }
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('timeentryModal'));
+                modal.hide();
+                
+                showAlert(id ? 'Pointage modifié avec succès' : 'Pointage créé avec succès', 'success');
+                loadTimeentriesPage();
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert(error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deleteTimeentry(id) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce pointage ?')) {
+                return;
+            }
+            
+            try {
+                showLoading();
+                
+                const response = await fetch(`/api/admin/timeentries/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erreur serveur');
+                }
+                
+                showAlert('Pointage supprimé avec succès', 'success');
+                loadTimeentriesPage();
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert(error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function bulkDelete() {
+            if (selectedItems.size === 0) return;
+            
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedItems.size} pointage(s) ?`)) {
+                return;
+            }
+            
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/timeentries/bulk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'delete',
+                        timeentry_ids: Array.from(selectedItems).map(id => parseInt(id))
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erreur serveur');
+                }
+                
+                const result = await response.json();
+                showAlert(result.message, 'success');
+                
+                selectedItems.clear();
+                updateSelectionUI();
+                loadTimeentriesPage();
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert(error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Filtres
+        function applyFilters() {
+            currentPage = 1;
+            selectedItems.clear();
+            updateSelectionUI();
+            loadTimeentriesPage();
+        }
+
+        // Export
+        async function exportData() {
+            try {
+                showLoading();
+                
+                const params = new URLSearchParams();
+                const employeeFilter = document.getElementById('filterEmployee').value;
+                const startDateFilter = document.getElementById('filterStartDate').value;
+                const endDateFilter = document.getElementById('filterEndDate').value;
+                
+                if (employeeFilter) params.append('employee_id', employeeFilter);
+                if (startDateFilter) params.append('start_date', startDateFilter);
+                if (endDateFilter) params.append('end_date', endDateFilter);
+                
+                // Pour l'export, on récupère toutes les données
+                params.append('limit', '10000');
+                
+                const response = await fetch(`/api/admin/timeentries?${params}`);
+                if (!response.ok) throw new Error('Erreur serveur');
+                
+                const data = await response.json();
+                
+                // Créer le CSV
+                const headers = ['ID', 'Employé', 'Date', 'Arrivée Matin', 'Sortie Midi', 'Retour Midi', 'Sortie Soir', 'Total Heures'];
+                const csvContent = [
+                    headers.join(','),
+                    ...data.timeentries.map(entry => [
+                        entry.id,
+                        `"${entry.employee_name}"`,
+                        entry.date,
+                        entry.morning_in || '',
+                        entry.lunch_out || '',
+                        entry.lunch_in || '',
+                        entry.evening_out || '',
+                        entry.total_hours || 0
+                    ].join(','))
+                ].join('\n');
+                
+                // Télécharger le fichier
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `pointages_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                
+                showAlert('Export réalisé avec succès', 'success');
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert('Erreur lors de l\'export', 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Autres fonctions
+        async function loadEmployees() {
+            // Placeholder pour la gestion des employés
+            console.log('Chargement des employés...');
+        }
+
+        function refreshDashboard() {
+            loadDashboard();
+        }
+
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    showAlert('Erreur lors de la déconnexion', 'danger');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showAlert('Erreur de connexion au serveur', 'danger');
+            }
+        }
+
+        // Vérification de l'authentification
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/check');
+                const data = await response.json();
+                
+                if (!data.authenticated || !data.is_admin) {
+                    window.location.href = '/';
+                    return;
+                }
+                
+                currentUser = data.employee;
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                window.location.href = '/';
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', async function() {
+            await checkAuth();
+            
+            // Navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const section = this.getAttribute('data-section');
+                    if (section) {
+                        showSection(section);
+                    }
+                });
+            });
+            
+            // Charger le dashboard par défaut
+            loadDashboard();
+            
+            // Gestion des erreurs globales
+            window.addEventListener('error', function(e) {
+                console.error('Erreur JavaScript:', e.error);
+            });
+        });
+    </script>
+</body>
+</html>
