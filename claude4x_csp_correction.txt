@@ -1,0 +1,8 @@
+Starting Claude 4.X CSP correction script...
+Successfully read src/main.py
+Calling Claude API for CSP correction...
+/home/ubuntu/pointage-claude4x/ask_claude_csp.py:37: DeprecationWarning: The model 'claude-3-5-sonnet-20241022' is deprecated and will reach end-of-life on October 22, 2025.
+Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resources/model-deprecations for more information.
+  response = client.messages.create(
+Claude API call for CSP correction finished.
+response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://plausible.io 'unsafe-inline' 'unsafe-eval'; style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-inline'; img-src 'self' data: https://* blob:; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https://api.manus.im https://api2.amplitude.com https://sr-client-cfg.amplitude.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
